@@ -1,0 +1,6 @@
+package pm:lipl-server;
+
+let storage = new pm:lipl-storage-wasi {};
+
+let server = new pm:server {
+};
