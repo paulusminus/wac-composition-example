@@ -1,8 +1,10 @@
 use crate::{
     constants::{SERVER, SERVICE, STORAGE},
+    get::get,
     pkg::Pkg,
 };
-use std::{error::Error, io::Cursor};
+use anyhow::Error;
+use std::io::Cursor;
 use wac_graph::{CompositionGraph, EncodeOptions, NodeId, types::Package};
 use wasm_pkg_client::{Client, PublishOpts};
 
@@ -11,20 +13,16 @@ mod get;
 mod pkg;
 
 trait ErrInto<T> {
-    fn err_into(self) -> Result<T, Box<dyn Error>>;
+    fn err_into(self) -> Result<T, Error>;
 }
 
-impl<T, E: Into<Box<dyn Error>>> ErrInto<T> for Result<T, E> {
-    fn err_into(self) -> Result<T, Box<dyn Error>> {
+impl<T, E: Into<Error>> ErrInto<T> for Result<T, E> {
+    fn err_into(self) -> Result<T, Error> {
         self.map_err(Into::into)
     }
 }
 
-fn instantiate(
-    graph: &mut CompositionGraph,
-    pkg: Pkg,
-    bytes: Vec<u8>,
-) -> Result<NodeId, Box<dyn Error>> {
+fn instantiate(graph: &mut CompositionGraph, pkg: Pkg, bytes: Vec<u8>) -> Result<NodeId, Error> {
     let v = pkg.version.parse()?;
     Package::from_bytes(pkg.name, Some(&v), bytes, graph.types_mut())
         .err_into()
@@ -33,16 +31,22 @@ fn instantiate(
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Error> {
     tracing_subscriber::fmt::init();
+    tracing::log::info!("Starting");
     let client = Client::with_global_defaults().await?;
     let (storage_bytes, service_bytes) =
-        tokio::try_join!(get::get(&client, STORAGE), get::get(&client, SERVICE))?;
+        tokio::try_join!(get(&client, STORAGE), get(&client, SERVICE))?;
     tracing::log::info!("Downloaded storage and service packages");
+
     let mut graph = CompositionGraph::new();
 
     let storage_instance = instantiate(&mut graph, constants::STORAGE, storage_bytes)?;
     let service_instance = instantiate(&mut graph, constants::SERVICE, service_bytes)?;
+
+    for i in graph.packages() {
+        tracing::log::info!("Package: {:?}", i);
+    }
 
     // Alias the default export of the `pm:lipl-storage-fs` instance
     let export_types =

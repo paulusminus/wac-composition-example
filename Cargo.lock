@@ -561,7 +561,9 @@ dependencies = [
 name = "component-test"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "futures-util",
+ "semver",
  "tokio",
  "tracing",
  "tracing-subscriber",
