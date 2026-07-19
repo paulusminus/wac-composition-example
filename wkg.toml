@@ -1,0 +1,4 @@
+[metadata]
+authors = "Paul Min"
+description = "Http server for managing lyrics and playlists"
+license = "MIT"

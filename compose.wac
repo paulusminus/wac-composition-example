@@ -1,0 +1,9 @@
+package pm:lipl-server@0.1.5;
+
+let storage = new pm:lipl-storage-fs {...};
+let service = new pm:lipl-service {
+    ...storage,
+    ...
+};
+
+export service.handler;
