@@ -2,8 +2,7 @@ use crate::pkg::Pkg;
 use futures_util::TryStreamExt;
 use wasm_pkg_client::Client;
 
-pub async fn get(pkg: Pkg) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-    let client = Client::with_global_defaults().await?;
+pub async fn get(client: &Client, pkg: Pkg) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let package = pkg.package_name().parse()?;
     let version = pkg.version.parse()?;
     let release = client.get_release(&package, &version).await?;

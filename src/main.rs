@@ -1,9 +1,10 @@
 use crate::{
-    constants::{SERVICE, STORAGE},
+    constants::{SERVER, SERVICE, STORAGE},
     pkg::Pkg,
 };
-use std::error::Error;
+use std::{error::Error, io::Cursor};
 use wac_graph::{CompositionGraph, EncodeOptions, NodeId, types::Package};
+use wasm_pkg_client::{Client, PublishOpts};
 
 mod constants;
 mod get;
@@ -19,7 +20,7 @@ impl<T, E: Into<Box<dyn Error>>> ErrInto<T> for Result<T, E> {
     }
 }
 
-async fn instantiate(
+fn instantiate(
     graph: &mut CompositionGraph,
     pkg: Pkg,
     bytes: Vec<u8>,
@@ -33,11 +34,15 @@ async fn instantiate(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let (storage_bytes, service_bytes) = tokio::try_join!(get::get(STORAGE), get::get(SERVICE))?;
+    tracing_subscriber::fmt::init();
+    let client = Client::with_global_defaults().await?;
+    let (storage_bytes, service_bytes) =
+        tokio::try_join!(get::get(&client, STORAGE), get::get(&client, SERVICE))?;
+    tracing::log::info!("Downloaded storage and service packages");
     let mut graph = CompositionGraph::new();
 
-    let storage_instance = instantiate(&mut graph, constants::STORAGE, storage_bytes).await?;
-    let service_instance = instantiate(&mut graph, constants::SERVICE, service_bytes).await?;
+    let storage_instance = instantiate(&mut graph, constants::STORAGE, storage_bytes)?;
+    let service_instance = instantiate(&mut graph, constants::SERVICE, service_bytes)?;
 
     // Alias the default export of the `pm:lipl-storage-fs` instance
     let export_types =
@@ -56,6 +61,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Finally, encode the graph into a new component
     let bytes = graph.encode(EncodeOptions::default())?;
-    tokio::fs::write(constants::OUTPUT_FILE, &bytes).await?;
+    tracing::log::info!("Encoded graph into component");
+
+    let cursor = Cursor::new(bytes);
+
+    let (package_ref, version) = client
+        .publish_release_data(
+            Box::pin(cursor),
+            PublishOpts {
+                package: Some((SERVER.package_name().parse()?, SERVER.version.parse()?)),
+                registry: None,
+            },
+        )
+        .await?;
+    tracing::log::info!(
+        "Package: {}:{}@{} published",
+        package_ref.namespace(),
+        package_ref.name(),
+        version
+    );
     Ok(())
 }
