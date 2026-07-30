@@ -75,6 +75,7 @@ async fn main() -> Result<(), Error> {
             PublishOpts {
                 package: Some((SERVER.package_name().parse()?, SERVER.version.parse()?)),
                 registry: None,
+                skip_semver_check: false,
                 ..Default::default()
             },
         )
