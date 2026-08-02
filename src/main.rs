@@ -6,7 +6,7 @@ use crate::{
 use anyhow::Error;
 use std::io::Cursor;
 use wac_graph::{CompositionGraph, EncodeOptions, NodeId, types::Package};
-use wasm_pkg_client::{Client, PublishOpts};
+use wasm_pkg_client::{Client, Config, PublishOpts};
 
 mod constants;
 mod get;
@@ -34,7 +34,9 @@ fn instantiate(graph: &mut CompositionGraph, pkg: Pkg, bytes: Vec<u8>) -> Result
 async fn main() -> Result<(), Error> {
     tracing_subscriber::fmt::init();
     tracing::log::info!("Starting");
-    let client = Client::with_global_defaults().await?;
+    let config = Config::from_toml(include_str!("../wasm-pkg.toml"))?;
+    let client = Client::new(config);
+    // let client = Client::with_global_defaults().await?;
     let (storage_bytes, service_bytes) =
         tokio::try_join!(get(&client, STORAGE), get(&client, SERVICE))?;
     tracing::log::info!("Downloaded storage and service packages");
