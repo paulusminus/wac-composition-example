@@ -36,7 +36,6 @@ async fn main() -> Result<(), Error> {
     tracing::log::info!("Starting");
     let config = Config::from_toml(include_str!("../wasm-pkg.toml"))?;
     let client = Client::new(config);
-    // let client = Client::with_global_defaults().await?;
     let (storage_bytes, service_bytes) =
         tokio::try_join!(get(&client, STORAGE), get(&client, SERVICE))?;
     tracing::log::info!("Downloaded storage and service packages");
@@ -70,14 +69,22 @@ async fn main() -> Result<(), Error> {
     tracing::log::info!("Encoded graph into component");
 
     let cursor = Cursor::new(bytes);
+    // let namespace_label = Label::from_str(SERVER.namespace)?;
+    // let name_label = Label::from_str(SERVER.name)?;
+    // let package_ref = PackageRef::new(namespace_label, name_label);
+    // let version = Version::from_str(SERVER.version)?;
+    // let registry = Registry::from_str("ghcr.io")?;
+
+    // let oci_client_config = ClientConfig::default();
+    // let oci_client = wasm_pkg_client::oci::client::Client::new(oci_client_config);
+    // let oci_reference = Reference::from_str("ghcr.io/paulusminus/pm/lipl-server:0.2.1")?;
+    // oci_client.push_blob(&oci_reference, bytes, digest).await?;
 
     let (package_ref, version) = client
         .publish_release_data(
             Box::pin(cursor),
             PublishOpts {
                 package: Some((SERVER.package_name().parse()?, SERVER.version.parse()?)),
-                registry: None,
-                skip_semver_check: false,
                 ..Default::default()
             },
         )
