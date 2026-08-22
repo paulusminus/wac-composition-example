@@ -10,6 +10,7 @@ use wasm_pkg_client::{Client, Config, PublishOpts};
 
 mod constants;
 mod get;
+mod oci;
 mod pkg;
 
 trait ErrInto<T> {
