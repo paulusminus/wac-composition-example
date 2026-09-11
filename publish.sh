@@ -1,7 +1,7 @@
 #!/bin/sh
 
 SERVER_VERSION="0.1.3"
-SERVER_SOURCE="https://github.com/paulusminus/pm"
+SERVER_SOURCE="https://github.com/paulusminus/wac-composition-example"
 SERVER_DESCRIPTION="implements http handler for managing lyrics and playlists"
 SERVER_LICENSES="MIT"
 
