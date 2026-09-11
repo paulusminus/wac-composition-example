@@ -20,7 +20,5 @@ wkg oci push \
   --annotation org.opencontainers.image.description="${SERVER_DESCRIPTION}" \
   --annotation org.opencontainers.image.version="${SERVER_VERSION}" \
   --annotation org.opencontainers.image.licenses="${SERVER_LICENSES}" \
-
-
   ghcr.io/paulusminus/pm/lipl-server:${SERVER_VERSION} \
   out/server.wasm
